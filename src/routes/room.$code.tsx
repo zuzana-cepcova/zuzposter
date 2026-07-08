@@ -133,7 +133,7 @@ function RoomPage() {
     return <FullScreenMessage title="Načítavam…" />;
   }
   if (!room || !me) {
-    return <FullScreenMessage title="Roomka nenájdená" cta />;
+    return <FullScreenMessage title="Space nenájdený" cta />;
   }
 
   return (
@@ -145,7 +145,7 @@ function RoomPage() {
             ← Domov
           </Link>
           <div className="text-right">
-            <div className="text-[10px] font-bold uppercase tracking-widest opacity-70">Kód roomky</div>
+            <div className="text-[10px] font-bold uppercase tracking-widest opacity-70">Kód space</div>
             <button
               onClick={() => {
                 navigator.clipboard?.writeText(room.code);

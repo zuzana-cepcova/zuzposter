@@ -30,7 +30,7 @@ function Home() {
       const { room } = await createRoom(clientId, name.trim());
       navigate({ to: "/room/$code", params: { code: room.code } });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Nepodarilo sa vytvoriť roomku.");
+      toast.error(e instanceof Error ? e.message : "Nepodarilo sa vytvoriť space.");
     } finally {
       setBusy(null);
     }
@@ -39,13 +39,13 @@ function Home() {
   async function handleJoin() {
     if (!validName) return toast.error("Zadaj nickname (min. 2 znaky).");
     const c = code.trim().toUpperCase();
-    if (c.length < 4) return toast.error("Zadaj kód roomky.");
+    if (c.length < 4) return toast.error("Zadaj kód space.");
     setBusy("join");
     try {
       setNickname(name);
       const room = await findRoomByCode(c);
       if (!room) {
-        toast.error("Roomka s týmto kódom neexistuje.");
+        toast.error("Space s týmto kódom neexistuje.");
         return;
       }
       navigate({ to: "/room/$code", params: { code: room.code } });
@@ -83,7 +83,7 @@ function Home() {
           <div className="nb-border nb-shadow-lg mb-6 rounded-xl bg-secondary p-4 text-sm text-secondary-foreground">
             <h2 className="mb-2 text-lg">AKO SA HRÁ</h2>
             <ol className="list-inside list-decimal space-y-1">
-              <li>Jeden hráč vytvorí roomku a zdieľa kód s partiou.</li>
+              <li>Jeden hráč vytvorí space a zdieľa kód s partiou.</li>
               <li>Ostatní sa pripoja cez kód.</li>
               <li>Admin spustí kolo. Náhodne vybraný hráč zadá tajné slovo.</li>
               <li>Všetci okrem <b>impostera</b> uvidia slovo. Imposter uvidí len „IMPOSTER“.</li>
@@ -111,7 +111,7 @@ function Home() {
           disabled={busy !== null}
           className="nb-border nb-shadow-lg nb-press mb-5 w-full rounded-xl bg-primary px-4 py-5 text-2xl font-black uppercase text-primary-foreground disabled:opacity-60"
         >
-          {busy === "create" ? "Vytváram…" : "Vytvoriť roomku"}
+          {busy === "create" ? "Vytváram…" : "Vytvoriť space"}
         </button>
 
         {/* Divider */}
@@ -124,7 +124,7 @@ function Home() {
         {/* Join */}
         <div className="nb-border nb-shadow-lg rounded-xl bg-card p-4">
           <label className="mb-2 block text-xs font-bold uppercase tracking-wider">
-            Kód roomky
+            Kód space
           </label>
           <input
             value={code}
