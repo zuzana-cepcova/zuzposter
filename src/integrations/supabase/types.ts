@@ -14,7 +14,117 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      players: {
+        Row: {
+          client_id: string
+          id: string
+          joined_at: string
+          name: string
+          room_id: string
+          score: number
+        }
+        Insert: {
+          client_id: string
+          id?: string
+          joined_at?: string
+          name: string
+          room_id: string
+          score?: number
+        }
+        Update: {
+          client_id?: string
+          id?: string
+          joined_at?: string
+          name?: string
+          room_id?: string
+          score?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "players_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rooms: {
+        Row: {
+          admin_client_id: string
+          code: string
+          created_at: string
+          current_round_id: string | null
+          id: string
+        }
+        Insert: {
+          admin_client_id: string
+          code: string
+          created_at?: string
+          current_round_id?: string | null
+          id?: string
+        }
+        Update: {
+          admin_client_id?: string
+          code?: string
+          created_at?: string
+          current_round_id?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
+      rounds: {
+        Row: {
+          created_at: string
+          id: string
+          imposter_id: string | null
+          room_id: string
+          status: string
+          word: string | null
+          word_chooser_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          imposter_id?: string | null
+          room_id: string
+          status?: string
+          word?: string | null
+          word_chooser_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          imposter_id?: string | null
+          room_id?: string
+          status?: string
+          word?: string | null
+          word_chooser_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rounds_imposter_id_fkey"
+            columns: ["imposter_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rounds_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rounds_word_chooser_id_fkey"
+            columns: ["word_chooser_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
