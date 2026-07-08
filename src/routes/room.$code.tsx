@@ -98,16 +98,23 @@ function RoomPage() {
         setRoom(newRoom);
         refreshRound(newRoom.current_round_id);
       })
-      .on("postgres_changes", { event: "*", schema: "public", table: "rounds", filter: `room_id=eq.${room.id}` }, () => {
-        // Re-fetch current round only
-        refreshRoom().then(() => {
-          // The room update handler will pick current_round_id; but also refresh current
-          if (room.current_round_id) refreshRound(room.current_round_id);
-        });
-        // Fallback: also fetch latest round directly
-        if (room.current_round_id) refreshRound(room.current_round_id);
+      .on("postgres_changes", { event: "*", schema: "public", table: "rounds", filter: `room_id=eq.${room.id}` }, (payload) => {
+        const newRound = (payload.new ?? payload.old) as Round | undefined;
+        if (newRound?.id) {
+          if (mounted) setRound(newRound as Round);
+          refreshRound(newRound.id);
+        }
+        refreshRoom();
       })
       .subscribe();
+
+    // Poll as a fallback in case realtime is delayed / unavailable
+    const poll = setInterval(() => {
+      refreshRoom();
+      refreshPlayers();
+      const rid = room?.current_round_id;
+      if (rid) refreshRound(rid);
+    }, 2500);
 
     return () => {
       mounted = false;
