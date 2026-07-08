@@ -109,12 +109,18 @@ function RoomPage() {
       .subscribe();
 
     // Poll as a fallback in case realtime is delayed / unavailable
-    const poll = setInterval(() => {
+    const poll = setInterval(async () => {
       refreshRoom();
       refreshPlayers();
-      const rid = room?.current_round_id;
-      if (rid) refreshRound(rid);
-    }, 2500);
+      const { data: latest } = await supabase
+        .from("rounds")
+        .select("*")
+        .eq("room_id", room!.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (mounted && latest) setRound(latest as Round);
+    }, 2000);
 
     return () => {
       mounted = false;
