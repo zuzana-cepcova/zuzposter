@@ -118,6 +118,7 @@ function RoomPage() {
 
     return () => {
       mounted = false;
+      clearInterval(poll);
       supabase.removeChannel(channel);
     };
     // Only re-subscribe when room id changes
