@@ -56,7 +56,7 @@ export async function createRoom(clientId: string, nickname: string): Promise<{ 
     if (pErr) throw pErr;
     return { room: room as Room, player: player as Player };
   }
-  throw new Error("Nepodarilo sa vygenerovať kód roomky, skús to znovu.");
+  throw new Error("Nepodarilo sa vygenerovať kód space, skús to znovu.");
 }
 
 export async function findRoomByCode(code: string): Promise<Room | null> {
@@ -71,7 +71,7 @@ export async function findRoomByCode(code: string): Promise<Room | null> {
 
 export async function joinRoom(code: string, clientId: string, nickname: string): Promise<{ room: Room; player: Player }> {
   const room = await findRoomByCode(code);
-  if (!room) throw new Error("Roomka s týmto kódom neexistuje.");
+  if (!room) throw new Error("Space s týmto kódom neexistuje.");
 
   // If player already exists (same client), just update name.
   const { data: existing } = await supabase
