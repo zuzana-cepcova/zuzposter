@@ -490,11 +490,13 @@ function EndedRoundView({
   players,
   isAdmin,
   room,
+  onlineIds,
 }: {
   round: Round;
   players: Player[];
   isAdmin: boolean;
   room: Room;
+  onlineIds: Set<string>;
 }) {
   const imposter = players.find((p) => p.id === round.imposter_id);
   const [busy, setBusy] = useState(false);
