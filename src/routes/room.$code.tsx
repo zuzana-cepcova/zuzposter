@@ -256,21 +256,23 @@ function GameTab({
   round,
   me,
   isAdmin,
+  onlineIds,
 }: {
   room: Room;
   players: Player[];
   round: Round | null;
   me: Player;
   isAdmin: boolean;
+  onlineIds: Set<string>;
 }) {
   // States: no round → lobby; choosing_word → chooser inputs word / others wait; active → cards; ended → scoring
-  if (!round) return <LobbyView room={room} players={players} me={me} isAdmin={isAdmin} />;
+  if (!round) return <LobbyView room={room} players={players} me={me} isAdmin={isAdmin} onlineIds={onlineIds} />;
   if (round.status === "choosing_word") return <ChoosingWordView round={round} players={players} me={me} isAdmin={isAdmin} room={room} />;
-  if (round.status === "active") return <ActiveRoundView round={round} me={me} isAdmin={isAdmin} players={players} />;
-  return <EndedRoundView round={round} players={players} isAdmin={isAdmin} room={room} />;
+  if (round.status === "active") return <ActiveRoundView round={round} me={me} isAdmin={isAdmin} players={players} onlineIds={onlineIds} />;
+  return <EndedRoundView round={round} players={players} isAdmin={isAdmin} room={room} onlineIds={onlineIds} />;
 }
 
-function LobbyView({ room, players, me, isAdmin }: { room: Room; players: Player[]; me: Player; isAdmin: boolean }) {
+function LobbyView({ room, players, me, isAdmin, onlineIds }: { room: Room; players: Player[]; me: Player; isAdmin: boolean; onlineIds: Set<string> }) {
   const [busy, setBusy] = useState(false);
   const canStart = players.length >= 3;
 
