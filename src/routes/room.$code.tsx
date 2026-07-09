@@ -526,7 +526,7 @@ function EndedRoundView({
       {isAdmin ? (
         <>
           <h3 className="mb-2 text-lg">Zapíš skóre</h3>
-          <ScoreList players={players} />
+          <ScoreList players={players} onlineIds={onlineIds} isAdmin={isAdmin} />
           <button
             onClick={handleNext}
             disabled={busy}
