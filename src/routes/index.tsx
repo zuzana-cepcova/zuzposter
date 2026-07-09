@@ -1,8 +1,9 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { getClientId, getNickname, setNickname } from "@/lib/client-id";
 import { createRoom, findRoomByCode } from "@/lib/game";
+
 
 export const Route = createFileRoute("/")({
   component: Home,
