@@ -457,8 +457,18 @@ function ActiveRoundView({
 
       <div className="mt-5 space-y-2">
         <div className="nb-border nb-shadow rounded-xl bg-card p-3 text-sm">
-          <div className="text-[10px] font-bold uppercase opacity-70">V hre</div>
-          <div className="font-semibold">{players.map((p) => p.name).join(" · ")}</div>
+          <div className="mb-1 text-[10px] font-bold uppercase opacity-70">V hre</div>
+          <div className="flex flex-wrap gap-1.5">
+            {players.map((p) => {
+              const on = onlineIds.has(p.client_id);
+              return (
+                <span key={p.id} className={`nb-border inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${on ? "bg-secondary text-secondary-foreground" : "bg-muted text-muted-foreground"}`}>
+                  <span className={`inline-block h-2 w-2 rounded-full ${on ? "bg-emerald-500" : "bg-neutral-400"}`} />
+                  {p.name}
+                </span>
+              );
+            })}
+          </div>
         </div>
       </div>
 
