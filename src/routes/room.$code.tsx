@@ -147,6 +147,23 @@ function RoomPage() {
     })();
   }, [room?.current_round_id]);
 
+  // Presence: mark this client as online in the space so the archive can show it.
+  useEffect(() => {
+    if (!room?.id || !clientId) return;
+    const ch = supabase.channel(`space-presence-${room.id}`, {
+      config: { presence: { key: clientId } },
+    });
+    ch.subscribe((status) => {
+      if (status === "SUBSCRIBED") {
+        ch.track({ online_at: new Date().toISOString() });
+      }
+    });
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, [room?.id, clientId]);
+
+
   if (loading) {
     return <FullScreenMessage title="Načítavam…" />;
   }
