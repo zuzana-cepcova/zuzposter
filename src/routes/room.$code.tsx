@@ -35,6 +35,7 @@ function RoomPage() {
   const [round, setRound] = useState<Round | null>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<Tab>("game");
+  const [onlineIds, setOnlineIds] = useState<Set<string>>(new Set());
 
   const me = useMemo(() => players.find((p) => p.client_id === clientId) ?? null, [players, clientId]);
   const isAdmin = !!room && !!clientId && room.admin_client_id === clientId;
