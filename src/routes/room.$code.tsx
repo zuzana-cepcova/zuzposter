@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { getClientId, getNickname } from "@/lib/client-id";
+import { rememberSpace } from "@/lib/space-history";
 import {
   adjustScore,
   clearCurrentRound,
@@ -11,9 +12,10 @@ import {
   startRound,
   submitWord,
   type Player,
-  type Room,
   type Round,
+  type Room,
 } from "@/lib/game";
+
 
 export const Route = createFileRoute("/room/$code")({
   component: RoomPage,
