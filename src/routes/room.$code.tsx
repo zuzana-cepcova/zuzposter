@@ -9,6 +9,7 @@ import {
   clearCurrentRound,
   endRound,
   joinRoom,
+  removePlayer,
   startRound,
   submitWord,
   type Player,
