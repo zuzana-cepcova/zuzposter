@@ -52,6 +52,7 @@ function RoomPage() {
       try {
         const { room: r } = await joinRoom(code, cid, nn);
         setRoom(r);
+        rememberSpace({ code: r.code, roomId: r.id, nickname: nn });
       } catch (e) {
         toast.error(e instanceof Error ? e.message : "Chyba");
         navigate({ to: "/" });
@@ -60,6 +61,7 @@ function RoomPage() {
       }
     })();
   }, [code, navigate]);
+
 
   // Load players + subscribe realtime
   useEffect(() => {
