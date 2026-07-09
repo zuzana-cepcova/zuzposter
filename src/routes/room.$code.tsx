@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { getClientId, getNickname } from "@/lib/client-id";
+import { rememberSpace } from "@/lib/space-history";
 import {
   adjustScore,
   clearCurrentRound,
@@ -11,9 +12,10 @@ import {
   startRound,
   submitWord,
   type Player,
-  type Room,
   type Round,
+  type Room,
 } from "@/lib/game";
+
 
 export const Route = createFileRoute("/room/$code")({
   component: RoomPage,
@@ -50,6 +52,7 @@ function RoomPage() {
       try {
         const { room: r } = await joinRoom(code, cid, nn);
         setRoom(r);
+        rememberSpace({ code: r.code, roomId: r.id, nickname: nn });
       } catch (e) {
         toast.error(e instanceof Error ? e.message : "Chyba");
         navigate({ to: "/" });
@@ -58,6 +61,7 @@ function RoomPage() {
       }
     })();
   }, [code, navigate]);
+
 
   // Load players + subscribe realtime
   useEffect(() => {
@@ -142,6 +146,23 @@ function RoomPage() {
       setRound((data as Round) ?? null);
     })();
   }, [room?.current_round_id]);
+
+  // Presence: mark this client as online in the space so the archive can show it.
+  useEffect(() => {
+    if (!room?.id || !clientId) return;
+    const ch = supabase.channel(`space-presence-${room.id}`, {
+      config: { presence: { key: clientId } },
+    });
+    ch.subscribe((status) => {
+      if (status === "SUBSCRIBED") {
+        ch.track({ online_at: new Date().toISOString() });
+      }
+    });
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, [room?.id, clientId]);
+
 
   if (loading) {
     return <FullScreenMessage title="Načítavam…" />;
