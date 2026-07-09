@@ -227,9 +227,10 @@ function RoomPage() {
             round={round}
             me={me}
             isAdmin={isAdmin}
+            onlineIds={onlineIds}
           />
         ) : (
-          <Leaderboard players={players} isAdmin={isAdmin} />
+          <Leaderboard players={players} isAdmin={isAdmin} onlineIds={onlineIds} />
         )}
       </div>
     </div>
