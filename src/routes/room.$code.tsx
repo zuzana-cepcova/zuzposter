@@ -296,7 +296,7 @@ function LobbyView({ room, players, me, isAdmin, onlineIds }: { room: Room; play
         </p>
       </div>
 
-      <PlayerList players={players} me={me} adminClientId={room.admin_client_id} />
+      <PlayerList players={players} me={me} adminClientId={room.admin_client_id} onlineIds={onlineIds} isAdmin={isAdmin} />
 
       {isAdmin ? (
         <button
