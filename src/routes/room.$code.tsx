@@ -397,11 +397,13 @@ function ActiveRoundView({
   me,
   isAdmin,
   players,
+  onlineIds,
 }: {
   round: Round;
   me: Player;
   isAdmin: boolean;
   players: Player[];
+  onlineIds: Set<string>;
 }) {
   const iAmImposter = round.imposter_id === me.id;
   const [revealed, setRevealed] = useState(false);
