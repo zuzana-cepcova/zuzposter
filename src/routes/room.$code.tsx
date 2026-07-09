@@ -149,18 +149,30 @@ function RoomPage() {
     })();
   }, [room?.current_round_id]);
 
-  // Presence: mark this client as online in the space so the archive can show it.
+  // Presence: heartbeat + track which client_ids are currently online in this space.
   useEffect(() => {
     if (!room?.id || !clientId) return;
     const ch = supabase.channel(`space-presence-${room.id}`, {
       config: { presence: { key: clientId } },
     });
+    const sync = () => {
+      const state = ch.presenceState() as Record<string, unknown[]>;
+      setOnlineIds(new Set(Object.keys(state)));
+    };
+    ch.on("presence", { event: "sync" }, sync);
+    ch.on("presence", { event: "join" }, sync);
+    ch.on("presence", { event: "leave" }, sync);
     ch.subscribe((status) => {
       if (status === "SUBSCRIBED") {
         ch.track({ online_at: new Date().toISOString() });
       }
     });
+    // Heartbeat: re-track periodically so stale sessions get pruned by the server.
+    const hb = setInterval(() => {
+      ch.track({ online_at: new Date().toISOString() });
+    }, 15000);
     return () => {
+      clearInterval(hb);
       supabase.removeChannel(ch);
     };
   }, [room?.id, clientId]);
