@@ -548,14 +548,37 @@ function EndedRoundView({
   );
 }
 
+function OnlineDot({ online }: { online: boolean }) {
+  return (
+    <span
+      title={online ? "Online" : "Offline"}
+      className={`inline-block h-2.5 w-2.5 flex-shrink-0 rounded-full ${online ? "bg-emerald-500 ring-2 ring-emerald-200" : "bg-neutral-400"}`}
+    />
+  );
+}
+
+async function handleKick(playerId: string, name: string) {
+  if (!confirm(`Odstrániť hráča "${name}" zo space?`)) return;
+  try {
+    await removePlayer(playerId);
+    toast.success("Hráč odstránený.");
+  } catch (e) {
+    toast.error(e instanceof Error ? e.message : "Chyba");
+  }
+}
+
 function PlayerList({
   players,
   me,
   adminClientId,
+  onlineIds,
+  isAdmin,
 }: {
   players: Player[];
   me: Player;
   adminClientId: string;
+  onlineIds: Set<string>;
+  isAdmin: boolean;
 }) {
   return (
     <div className="nb-border nb-shadow rounded-xl bg-card p-2">
@@ -563,39 +586,53 @@ function PlayerList({
         Hráči ({players.length})
       </div>
       <ul className="space-y-1">
-        {players.map((p) => (
-          <li
-            key={p.id}
-            className="flex items-center justify-between rounded-md px-3 py-2"
-            style={{ background: p.id === me.id ? "var(--muted)" : "transparent" }}
-          >
-            <span className="font-semibold">
-              {p.name}
-              {p.id === me.id && <span className="ml-2 text-xs text-muted-foreground">(ty)</span>}
-            </span>
-            {p.client_id === adminClientId && (
-              <span className="nb-border rounded bg-primary px-2 py-0.5 text-[10px] font-black uppercase">
-                Admin
+        {players.map((p) => {
+          const online = onlineIds.has(p.client_id);
+          const isSelf = p.id === me.id;
+          return (
+            <li
+              key={p.id}
+              className="flex items-center gap-2 rounded-md px-3 py-2"
+              style={{ background: isSelf ? "var(--muted)" : "transparent" }}
+            >
+              <OnlineDot online={online} />
+              <span className={`flex-1 truncate font-semibold ${online ? "" : "opacity-60"}`}>
+                {p.name}
+                {isSelf && <span className="ml-2 text-xs text-muted-foreground">(ty)</span>}
               </span>
-            )}
-          </li>
-        ))}
+              {p.client_id === adminClientId && (
+                <span className="nb-border rounded bg-primary px-2 py-0.5 text-[10px] font-black uppercase">
+                  Admin
+                </span>
+              )}
+              {isAdmin && !online && !isSelf && (
+                <button
+                  onClick={() => handleKick(p.id, p.name)}
+                  className="nb-border nb-press rounded bg-danger px-2 py-0.5 text-[10px] font-black uppercase text-danger-foreground"
+                  title="Odstrániť offline hráča"
+                >
+                  ✕
+                </button>
+              )}
+            </li>
+          );
+        })}
       </ul>
     </div>
   );
 }
 
-function ScoreList({ players }: { players: Player[] }) {
+function ScoreList({ players, onlineIds, isAdmin }: { players: Player[]; onlineIds: Set<string>; isAdmin: boolean }) {
   return (
     <div className="space-y-2">
       {players.map((p) => (
-        <ScoreRow key={p.id} player={p} />
+        <ScoreRow key={p.id} player={p} online={onlineIds.has(p.client_id)} isAdmin={isAdmin} />
       ))}
     </div>
   );
 }
 
-function ScoreRow({ player }: { player: Player }) {
+function ScoreRow({ player, online, isAdmin }: { player: Player; online: boolean; isAdmin: boolean }) {
   const [busy, setBusy] = useState(false);
   async function change(delta: number) {
     setBusy(true);
@@ -609,9 +646,23 @@ function ScoreRow({ player }: { player: Player }) {
   }
   return (
     <div className="nb-border nb-shadow flex items-center justify-between rounded-xl bg-card px-3 py-2">
-      <div className="min-w-0 flex-1">
-        <div className="truncate font-bold">{player.name}</div>
-        <div className="text-xs text-muted-foreground">{player.score} b</div>
+      <div className="flex min-w-0 flex-1 items-center gap-2">
+        <OnlineDot online={online} />
+        <div className="min-w-0">
+          <div className={`truncate font-bold ${online ? "" : "opacity-60"}`}>{player.name}</div>
+          <div className="text-xs text-muted-foreground">
+            {player.score} b {!online && "· offline"}
+          </div>
+        </div>
+        {isAdmin && !online && (
+          <button
+            onClick={() => handleKick(player.id, player.name)}
+            className="nb-border nb-press ml-1 rounded bg-danger px-2 py-0.5 text-[10px] font-black uppercase text-danger-foreground"
+            title="Odstrániť offline hráča"
+          >
+            ✕
+          </button>
+        )}
       </div>
       <div className="flex items-center gap-2">
         <button
@@ -647,7 +698,7 @@ function ReadOnlyScoreList({ players }: { players: Player[] }) {
   );
 }
 
-function Leaderboard({ players, isAdmin }: { players: Player[]; isAdmin: boolean }) {
+function Leaderboard({ players, isAdmin, onlineIds }: { players: Player[]; isAdmin: boolean; onlineIds: Set<string> }) {
   const sorted = [...players].sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
   const medals = ["🥇", "🥈", "🥉"];
 
@@ -655,18 +706,25 @@ function Leaderboard({ players, isAdmin }: { players: Player[]; isAdmin: boolean
     <div>
       <h2 className="mb-3 text-xl">🏆 REBRÍČEK</h2>
       <div className="space-y-2">
-        {sorted.map((p, i) => (
-          <div
-            key={p.id}
-            className={`nb-border nb-shadow flex items-center gap-3 rounded-xl px-4 py-3 ${
-              i === 0 ? "bg-primary text-primary-foreground" : "bg-card"
-            }`}
-          >
-            <div className="w-8 text-center text-2xl">{medals[i] ?? `#${i + 1}`}</div>
-            <div className="flex-1 truncate font-bold">{p.name}</div>
-            <div className="text-2xl font-black">{p.score}</div>
-          </div>
-        ))}
+        {sorted.map((p, i) => {
+          const online = onlineIds.has(p.client_id);
+          return (
+            <div
+              key={p.id}
+              className={`nb-border nb-shadow flex items-center gap-3 rounded-xl px-4 py-3 ${
+                i === 0 ? "bg-primary text-primary-foreground" : "bg-card"
+              }`}
+            >
+              <div className="w-8 text-center text-2xl">{medals[i] ?? `#${i + 1}`}</div>
+              <OnlineDot online={online} />
+              <div className={`flex-1 truncate font-bold ${online ? "" : "opacity-60"}`}>
+                {p.name}
+                {!online && <span className="ml-2 text-[10px] font-bold uppercase opacity-70">offline</span>}
+              </div>
+              <div className="text-2xl font-black">{p.score}</div>
+            </div>
+          );
+        })}
         {sorted.length === 0 && (
           <div className="nb-border rounded-xl bg-muted p-6 text-center text-sm">
             Zatiaľ žiadni hráči.
@@ -677,7 +735,7 @@ function Leaderboard({ players, isAdmin }: { players: Player[]; isAdmin: boolean
       {isAdmin && (
         <div className="mt-6">
           <h3 className="mb-2 text-sm font-bold uppercase text-muted-foreground">Upraviť skóre</h3>
-          <ScoreList players={sorted} />
+          <ScoreList players={sorted} onlineIds={onlineIds} isAdmin={isAdmin} />
         </div>
       )}
     </div>
