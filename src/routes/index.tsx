@@ -115,12 +115,24 @@ function Home() {
           {busy === "create" ? "Vytváram…" : "Vytvoriť space"}
         </button>
 
+        {/* My spaces */}
+        <Link
+          to="/my-spaces"
+          className="nb-border nb-shadow nb-press mb-5 flex w-full items-center justify-between rounded-xl bg-secondary px-4 py-3 font-black uppercase text-secondary-foreground"
+        >
+          <span className="flex items-center gap-2">
+            <span className="text-xl">📚</span> My spaces
+          </span>
+          <span className="text-xs opacity-70">história →</span>
+        </Link>
+
         {/* Divider */}
         <div className="mb-5 flex items-center gap-3">
           <div className="h-[3px] flex-1 bg-ink" />
           <span className="text-sm font-bold uppercase">alebo</span>
           <div className="h-[3px] flex-1 bg-ink" />
         </div>
+
 
         {/* Join */}
         <div className="nb-border nb-shadow-lg rounded-xl bg-card p-4">
