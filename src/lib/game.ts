@@ -73,7 +73,7 @@ export async function joinRoom(code: string, clientId: string, nickname: string)
   const room = await findRoomByCode(code);
   if (!room) throw new Error("Space s týmto kódom neexistuje.");
 
-  // If player already exists (same client), just update name.
+  // 1) If player already exists (same client), just update name.
   const { data: existing } = await supabase
     .from("players")
     .select("*")
@@ -88,9 +88,35 @@ export async function joinRoom(code: string, clientId: string, nickname: string)
     return { room, player: { ...(existing as Player), name: nickname } };
   }
 
+  // 2) Takeover by nickname: if a player with same name exists in this room
+  // (e.g. reconnect from another device / cleared storage), reclaim it so score & history persist.
+  const trimmed = nickname.trim();
+  const { data: byName } = await supabase
+    .from("players")
+    .select("*")
+    .eq("room_id", room.id)
+    .ilike("name", trimmed)
+    .maybeSingle();
+
+  if (byName) {
+    const { data: updated } = await supabase
+      .from("players")
+      .update({ client_id: clientId, name: trimmed })
+      .eq("id", (byName as Player).id)
+      .select()
+      .single();
+    // If admin was this player, hand the admin role back to the new client id.
+    if (room.admin_client_id === (byName as Player).client_id) {
+      await supabase.from("rooms").update({ admin_client_id: clientId }).eq("id", room.id);
+      room.admin_client_id = clientId;
+    }
+    return { room, player: (updated as Player) ?? ({ ...(byName as Player), client_id: clientId, name: trimmed }) };
+  }
+
+  // 3) Create new player.
   const { data: player, error } = await supabase
     .from("players")
-    .insert({ room_id: room.id, client_id: clientId, name: nickname })
+    .insert({ room_id: room.id, client_id: clientId, name: trimmed })
     .select()
     .single();
   if (error) {
@@ -106,6 +132,11 @@ export async function joinRoom(code: string, clientId: string, nickname: string)
     throw error;
   }
   return { room, player: player as Player };
+}
+
+export async function removePlayer(playerId: string): Promise<void> {
+  const { error } = await supabase.from("players").delete().eq("id", playerId);
+  if (error) throw error;
 }
 
 export async function startRound(roomId: string, players: Player[]): Promise<Round> {
