@@ -115,17 +115,6 @@ function Home() {
           {busy === "create" ? "Vytváram…" : "Vytvoriť space"}
         </button>
 
-        {/* My spaces */}
-        <Link
-          to="/my-spaces"
-          className="nb-border nb-shadow nb-press mb-5 flex w-full items-center justify-between rounded-xl bg-secondary px-4 py-3 font-black uppercase text-secondary-foreground"
-        >
-          <span className="flex items-center gap-2">
-            <span className="text-xl">📚</span> My spaces
-          </span>
-          <span className="text-xs opacity-70">história →</span>
-        </Link>
-
         {/* Divider */}
         <div className="mb-5 flex items-center gap-3">
           <div className="h-[3px] flex-1 bg-ink" />
@@ -135,7 +124,7 @@ function Home() {
 
 
         {/* Join */}
-        <div className="nb-border nb-shadow-lg rounded-xl bg-card p-4">
+        <div className="nb-border nb-shadow-lg mb-5 rounded-xl bg-card p-4">
           <label className="mb-2 block text-xs font-bold uppercase tracking-wider">
             Kód space
           </label>
@@ -153,6 +142,17 @@ function Home() {
             {busy === "join" ? "Pripájam…" : "Pripojiť sa"}
           </button>
         </div>
+
+        {/* My spaces */}
+        <Link
+          to="/my-spaces"
+          className="nb-border nb-shadow nb-press flex w-full items-center justify-between rounded-xl bg-secondary px-4 py-3 font-black uppercase text-secondary-foreground"
+        >
+          <span className="flex items-center gap-2">
+            <span className="text-xl">📚</span> My spaces
+          </span>
+          <span className="text-xs opacity-70">história →</span>
+        </Link>
 
         <p className="mt-8 text-center text-xs text-muted-foreground">
           Made for chaotic evenings. 🎉
