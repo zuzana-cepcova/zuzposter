@@ -59,9 +59,9 @@ function Home() {
   }
 
   return (
-    <div className="relative min-h-screen bg-background px-4 py-6 md:py-12">
+    <div className="relative min-h-screen px-4 py-6 md:py-12">
       <FloatingEmojis />
-      <div className="mx-auto max-w-md">
+      <div className="relative z-10 mx-auto max-w-md">
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-2">
