@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { getClientId, getNickname, setNickname } from "@/lib/client-id";
 import { createRoom, findRoomByCode } from "@/lib/game";
+import { FloatingEmojis } from "@/components/FloatingEmojis";
 
 
 export const Route = createFileRoute("/")({
