@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { getClientId, getNickname, setNickname } from "@/lib/client-id";
 import { createRoom, findRoomByCode } from "@/lib/game";
+import { FloatingEmojis } from "@/components/FloatingEmojis";
 
 
 export const Route = createFileRoute("/")({
@@ -58,7 +59,8 @@ function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-background px-4 py-6 md:py-12">
+    <div className="relative min-h-screen bg-background px-4 py-6 md:py-12">
+      <FloatingEmojis />
       <div className="mx-auto max-w-md">
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
