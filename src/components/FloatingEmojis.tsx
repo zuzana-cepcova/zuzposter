@@ -73,16 +73,28 @@ export function FloatingEmojis() {
     }));
   }, [items]);
 
-  // click handler on window (only when clicking non-interactive background)
+  // pointer tracking — emojis follow cursor (desktop) and taps/drags (mobile)
   useEffect(() => {
-    function onClick(e: MouseEvent) {
-      const target = e.target as HTMLElement | null;
-      if (target && target.closest("button, a, input, textarea, select, label, [role='button']")) return;
-      targetRef.current = { x: e.clientX, y: e.clientY };
-      targetUntilRef.current = performance.now() + 2200;
+    function setTarget(x: number, y: number, duration = 0) {
+      targetRef.current = { x, y };
+      targetUntilRef.current = duration > 0 ? performance.now() + duration : Number.POSITIVE_INFINITY;
     }
-    window.addEventListener("click", onClick);
-    return () => window.removeEventListener("click", onClick);
+    function onMove(e: MouseEvent) {
+      setTarget(e.clientX, e.clientY);
+    }
+    function onTouch(e: TouchEvent) {
+      const t = e.touches[0] ?? e.changedTouches[0];
+      if (!t) return;
+      setTarget(t.clientX, t.clientY, 2500);
+    }
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("touchstart", onTouch, { passive: true });
+    window.addEventListener("touchmove", onTouch, { passive: true });
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("touchstart", onTouch);
+      window.removeEventListener("touchmove", onTouch);
+    };
   }, []);
 
   // animation loop
