@@ -4,7 +4,6 @@ import { toast } from "sonner";
 import { getClientId, getNickname, setNickname } from "@/lib/client-id";
 import { createRoom, findRoomByCode } from "@/lib/game";
 import { FloatingEmojis } from "@/components/FloatingEmojis";
-import { DodoToggle } from "@/components/InfoPopover";
 
 
 export const Route = createFileRoute("/")({
@@ -17,7 +16,6 @@ function Home() {
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState<null | "create" | "join">(null);
   const [showHowTo, setShowHowTo] = useState(false);
-  const [dodo, setDodo] = useState(false);
 
   useEffect(() => {
     setName(getNickname());
@@ -31,7 +29,7 @@ function Home() {
     try {
       setNickname(name);
       const clientId = getClientId();
-      const { room } = await createRoom(clientId, name.trim(), dodo);
+      const { room } = await createRoom(clientId, name.trim());
       navigate({ to: "/room/$code", params: { code: room.code } });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Nepodarilo sa vytvoriť space.");
@@ -111,9 +109,6 @@ function Home() {
         </div>
 
         {/* Create */}
-        <div className="nb-border nb-shadow mb-3 rounded-xl bg-card p-3">
-          <DodoToggle checked={dodo} onChange={setDodo} />
-        </div>
         <button
           onClick={handleCreate}
           disabled={busy !== null}

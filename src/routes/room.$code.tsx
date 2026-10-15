@@ -277,6 +277,14 @@ function GameTab({
 function LobbyView({ room, players, me, isAdmin, onlineIds }: { room: Room; players: Player[]; me: Player; isAdmin: boolean; onlineIds: Set<string> }) {
   const [busy, setBusy] = useState(false);
   const canStart = players.length >= 3;
+  const dodoAllowed = players.length >= 4;
+
+  // Turn Dodo off automatically if the lobby drops below 4 players.
+  useEffect(() => {
+    if (isAdmin && room.dodo_enabled && !dodoAllowed) {
+      setDodoEnabled(room.id, false).catch(() => {});
+    }
+  }, [isAdmin, room.id, room.dodo_enabled, dodoAllowed]);
 
   async function handleStart() {
     setBusy(true);
@@ -301,13 +309,18 @@ function LobbyView({ room, players, me, isAdmin, onlineIds }: { room: Room; play
       {isAdmin ? (
         <div className="nb-border nb-shadow mb-5 rounded-xl bg-card p-3">
           <DodoToggle
-            checked={!!room.dodo_enabled}
+            checked={!!room.dodo_enabled && dodoAllowed}
             playerCount={players.length}
-            onChange={(v) => setDodoEnabled(room.id, v).catch(() => toast.error("Nepodarilo sa uložiť."))}
+            disabled={!dodoAllowed}
+            onChange={(v) =>
+              setDodoEnabled(room.id, v).catch((e) =>
+                toast.error(e instanceof Error ? e.message : "Nepodarilo sa uložiť."),
+              )
+            }
           />
         </div>
       ) : (
-        room.dodo_enabled && <DodoBadge className="mb-5" />
+        room.dodo_enabled && dodoAllowed && <DodoBadge className="mb-5" />
       )}
 
       <PlayerList players={players} me={me} adminClientId={room.admin_client_id} onlineIds={onlineIds} isAdmin={isAdmin} />
@@ -421,6 +434,7 @@ function ActiveRoundView({
 }) {
   const iAmImposter = round.imposter_id === me.id;
   const iAmDodo = !!round.dodo_id && round.dodo_id === me.id;
+  const iAmChooser = round.word_chooser_id === me.id;
   const [revealed, setRevealed] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -446,7 +460,9 @@ function ActiveRoundView({
         onClick={() => setRevealed((v) => !v)}
         className={`nb-border-thick nb-shadow-xl relative aspect-[3/4] w-full overflow-hidden rounded-2xl transition-colors ${
           revealed
-            ? iAmImposter
+            ? iAmChooser
+              ? "bg-accent text-accent-foreground"
+              : iAmImposter
               ? "bg-danger text-danger-foreground"
               : iAmDodo
               ? "bg-primary text-primary-foreground"
@@ -454,7 +470,16 @@ function ActiveRoundView({
             : "bg-ink text-background"
         }`}
       >
-        {revealed && iAmDodo ? (
+        {revealed && iAmChooser ? (
+          <div className="flex h-full w-full flex-col items-center justify-center p-6 text-center">
+            <div className="text-6xl">🍿</div>
+            <div className="mt-4 text-3xl font-black uppercase leading-tight">Toto kolo nesúťažíš</div>
+            <div className="mt-3 text-xl font-bold">Uži si hru!</div>
+            <div className="mt-6 text-xs font-bold uppercase opacity-70">Tvoje slovo</div>
+            <div className="break-words text-2xl font-black uppercase leading-none">{round.word}</div>
+            <div className="mt-6 text-xs opacity-80">Klikni znova pre skrytie</div>
+          </div>
+        ) : revealed && iAmDodo ? (
           <div className="flex h-full w-full flex-col items-center justify-center p-5 text-center">
             <div className="text-3xl font-black uppercase">🦤 Si Dodo!</div>
             <div className="mt-3 text-xs font-bold uppercase opacity-70">Tajné slovo</div>
