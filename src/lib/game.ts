@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { fairPick } from "@/lib/fair-pick";
 
 export type Room = {
   id: string;
@@ -6,6 +7,7 @@ export type Room = {
   admin_client_id: string;
   current_round_id: string | null;
   created_at: string;
+  dodo_enabled?: boolean;
 };
 
 export type Player = {
@@ -22,6 +24,7 @@ export type Round = {
   room_id: string;
   word_chooser_id: string;
   imposter_id: string | null;
+  dodo_id?: string | null;
   word: string | null;
   status: "choosing_word" | "active" | "ended";
   created_at: string;
@@ -35,13 +38,13 @@ function generateCode(len = 5): string {
   return Array.from(arr, (b) => ALPHABET[b % ALPHABET.length]).join("");
 }
 
-export async function createRoom(clientId: string, nickname: string): Promise<{ room: Room; player: Player }> {
+export async function createRoom(clientId: string, nickname: string, dodoEnabled = false): Promise<{ room: Room; player: Player }> {
   // Try a handful of times in the extremely unlikely case of code collision.
   for (let i = 0; i < 5; i++) {
     const code = generateCode();
     const { data: room, error } = await supabase
       .from("rooms")
-      .insert({ code, admin_client_id: clientId })
+      .insert({ code, admin_client_id: clientId, dodo_enabled: dodoEnabled })
       .select()
       .single();
     if (error) {
@@ -141,7 +144,9 @@ export async function removePlayer(playerId: string): Promise<void> {
 
 export async function startRound(roomId: string, players: Player[]): Promise<Round> {
   if (players.length < 3) throw new Error("Na spustenie kola potrebujete aspoň 3 hráčov.");
-  const chooser = players[Math.floor(Math.random() * players.length)];
+  const history = await getRoundHistory(roomId);
+  const chooserId = fairPick(players.map((p) => p.id), history.map((r) => r.word_chooser_id));
+  const chooser = players.find((p) => p.id === chooserId) ?? players[0];
   const { data: round, error } = await supabase
     .from("rounds")
     .insert({
@@ -156,16 +161,47 @@ export async function startRound(roomId: string, players: Player[]): Promise<Rou
   return round as Round;
 }
 
+async function getRoundHistory(roomId: string): Promise<Round[]> {
+  const { data } = await supabase
+    .from("rounds")
+    .select("*")
+    .eq("room_id", roomId)
+    .order("created_at", { ascending: true })
+    .limit(500);
+  return (data as Round[]) ?? [];
+}
+
+export async function setDodoEnabled(roomId: string, enabled: boolean): Promise<void> {
+  const { error } = await supabase.from("rooms").update({ dodo_enabled: enabled }).eq("id", roomId);
+  if (error) throw error;
+}
+
 export async function submitWord(round: Round, word: string, players: Player[]): Promise<void> {
-  // Imposter is anyone except the word chooser.
-  const candidates = players.filter((p) => p.id !== round.word_chooser_id);
-  if (candidates.length === 0) throw new Error("Nie sú dostupní hráči na impostera.");
-  const imposter = candidates[Math.floor(Math.random() * candidates.length)];
+  const [{ data: room }, history] = await Promise.all([
+    supabase.from("rooms").select("dodo_enabled").eq("id", round.room_id).maybeSingle(),
+    getRoundHistory(round.room_id),
+  ]);
+  const past = history.filter((r) => r.id !== round.id && r.status !== "choosing_word");
+  // Imposter: anyone except the word chooser, fair random.
+  const impCandidates = players.filter((p) => p.id !== round.word_chooser_id).map((p) => p.id);
+  if (impCandidates.length === 0) throw new Error("Nie sú dostupní hráči na impostera.");
+  const imposterId = fairPick(impCandidates, past.map((r) => r.imposter_id))!;
+
+  let dodoId: string | null = null;
+  if ((room as { dodo_enabled?: boolean } | null)?.dodo_enabled) {
+    // Dodo: never the imposter; prefer not the chooser when enough players.
+    const notImp = players.filter((p) => p.id !== imposterId).map((p) => p.id);
+    const preferred = notImp.filter((id) => id !== round.word_chooser_id);
+    const pool = preferred.length > 0 ? preferred : notImp;
+    dodoId = fairPick(pool, past.map((r) => r.dodo_id ?? null));
+  }
+
   const { error } = await supabase
     .from("rounds")
     .update({
       word: word.trim(),
-      imposter_id: imposter.id,
+      imposter_id: imposterId,
+      dodo_id: dodoId,
       status: "active",
     })
     .eq("id", round.id);

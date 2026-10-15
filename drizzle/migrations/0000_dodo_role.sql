@@ -1,0 +1,2 @@
+ALTER TABLE public.rooms ADD COLUMN IF NOT EXISTS dodo_enabled boolean NOT NULL DEFAULT false;
+ALTER TABLE public.rounds ADD COLUMN IF NOT EXISTS dodo_id uuid REFERENCES public.players(id) ON DELETE SET NULL;

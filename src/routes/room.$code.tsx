@@ -10,12 +10,14 @@ import {
   endRound,
   joinRoom,
   removePlayer,
+  setDodoEnabled,
   startRound,
   submitWord,
   type Player,
   type Round,
   type Room,
 } from "@/lib/game";
+import { DodoToggle, ScoringHelp } from "@/components/InfoPopover";
 
 
 export const Route = createFileRoute("/room/$code")({
@@ -296,6 +298,18 @@ function LobbyView({ room, players, me, isAdmin, onlineIds }: { room: Room; play
         </p>
       </div>
 
+      {isAdmin ? (
+        <div className="nb-border nb-shadow mb-5 rounded-xl bg-card p-3">
+          <DodoToggle
+            checked={!!room.dodo_enabled}
+            playerCount={players.length}
+            onChange={(v) => setDodoEnabled(room.id, v).catch(() => toast.error("Nepodarilo sa uložiť."))}
+          />
+        </div>
+      ) : (
+        room.dodo_enabled && <DodoBadge className="mb-5" />
+      )}
+
       <PlayerList players={players} me={me} adminClientId={room.admin_client_id} onlineIds={onlineIds} isAdmin={isAdmin} />
 
       {isAdmin ? (
@@ -406,6 +420,7 @@ function ActiveRoundView({
   onlineIds: Set<string>;
 }) {
   const iAmImposter = round.imposter_id === me.id;
+  const iAmDodo = !!round.dodo_id && round.dodo_id === me.id;
   const [revealed, setRevealed] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -422,6 +437,7 @@ function ActiveRoundView({
 
   return (
     <div>
+      {round.dodo_id && <DodoBadge className="mb-3" />}
       <p className="mb-3 text-center text-xs font-bold uppercase text-muted-foreground">
         Tvoja karta — pozri sám, nikomu neukazuj!
       </p>
@@ -432,11 +448,27 @@ function ActiveRoundView({
           revealed
             ? iAmImposter
               ? "bg-danger text-danger-foreground"
+              : iAmDodo
+              ? "bg-primary text-primary-foreground"
               : "bg-secondary text-secondary-foreground"
             : "bg-ink text-background"
         }`}
       >
-        {revealed ? (
+        {revealed && iAmDodo ? (
+          <div className="flex h-full w-full flex-col items-center justify-center p-5 text-center">
+            <div className="text-3xl font-black uppercase">🦤 Si Dodo!</div>
+            <div className="mt-3 text-xs font-bold uppercase opacity-70">Tajné slovo</div>
+            <div className="break-words text-4xl font-black uppercase leading-none">{round.word}</div>
+            <div className="mt-4 space-y-1 text-left text-xs font-semibold">
+              <div className="font-black uppercase">Tvoja misia</div>
+              <div>Poznáš slovo, ale chceš, aby si ostatní mysleli, že si Imposter.</div>
+              <div>🎭 Dávaj podozrivé alebo nejednoznačné nápovedy.</div>
+              <div>🤫 Nedaj najavo, že si Dodo.</div>
+              <div>🏆 Vyhráš, ak ťa odhlasujú ako Impostera.</div>
+            </div>
+            <div className="mt-3 text-xs opacity-80">Klikni znova pre skrytie</div>
+          </div>
+        ) : revealed ? (
           <div className="flex h-full w-full flex-col items-center justify-center p-6 text-center">
             <div className="text-xs font-bold uppercase opacity-70">
               {iAmImposter ? "Ty si…" : "Tajné slovo"}
@@ -499,6 +531,7 @@ function EndedRoundView({
   onlineIds: Set<string>;
 }) {
   const imposter = players.find((p) => p.id === round.imposter_id);
+  const dodo = round.dodo_id ? players.find((p) => p.id === round.dodo_id) : null;
   const [busy, setBusy] = useState(false);
 
   async function handleNext() {
@@ -521,11 +554,20 @@ function EndedRoundView({
         <div className="text-3xl font-black uppercase">{round.word}</div>
         <div className="mt-3 text-lg font-bold">Imposter bol</div>
         <div className="text-3xl font-black uppercase">🕵️ {imposter?.name ?? "?"}</div>
+        {round.dodo_id && (
+          <>
+            <div className="mt-3 text-lg font-bold">Dodo bol</div>
+            <div className="text-3xl font-black uppercase">🦤 {dodo?.name ?? "?"}</div>
+          </>
+        )}
       </div>
 
       {isAdmin ? (
         <>
-          <h3 className="mb-2 text-lg">Zapíš skóre</h3>
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <h3 className="text-lg">Zapíš skóre</h3>
+            <ScoringHelp dodo={!!round.dodo_id} />
+          </div>
           <ScoreList players={players} onlineIds={onlineIds} isAdmin={isAdmin} />
           <button
             onClick={handleNext}
@@ -756,6 +798,16 @@ function FullScreenMessage({ title, cta }: { title: string; cta?: boolean }) {
           </Link>
         )}
       </div>
+    </div>
+  );
+}
+
+function DodoBadge({ className = "" }: { className?: string }) {
+  return (
+    <div className={`flex justify-center ${className}`}>
+      <span className="nb-border rounded-full bg-primary px-3 py-1 text-xs font-black uppercase text-primary-foreground">
+        🦤 Dodo ON
+      </span>
     </div>
   );
 }
