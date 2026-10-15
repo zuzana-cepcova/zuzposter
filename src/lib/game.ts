@@ -38,13 +38,13 @@ function generateCode(len = 5): string {
   return Array.from(arr, (b) => ALPHABET[b % ALPHABET.length]).join("");
 }
 
-export async function createRoom(clientId: string, nickname: string, dodoEnabled = false): Promise<{ room: Room; player: Player }> {
+export async function createRoom(clientId: string, nickname: string): Promise<{ room: Room; player: Player }> {
   // Try a handful of times in the extremely unlikely case of code collision.
   for (let i = 0; i < 5; i++) {
     const code = generateCode();
     const { data: room, error } = await supabase
       .from("rooms")
-      .insert({ code, admin_client_id: clientId, dodo_enabled: dodoEnabled })
+      .insert({ code, admin_client_id: clientId, dodo_enabled: false })
       .select()
       .single();
     if (error) {
@@ -171,7 +171,18 @@ async function getRoundHistory(roomId: string): Promise<Round[]> {
   return (data as Round[]) ?? [];
 }
 
+export const DODO_MIN_PLAYERS = 4;
+
 export async function setDodoEnabled(roomId: string, enabled: boolean): Promise<void> {
+  if (enabled) {
+    const { count } = await supabase
+      .from("players")
+      .select("id", { count: "exact", head: true })
+      .eq("room_id", roomId);
+    if ((count ?? 0) < DODO_MIN_PLAYERS) {
+      throw new Error(`Dodo sa dá zapnúť od ${DODO_MIN_PLAYERS} hráčov.`);
+    }
+  }
   const { error } = await supabase.from("rooms").update({ dodo_enabled: enabled }).eq("id", roomId);
   if (error) throw error;
 }
@@ -188,12 +199,12 @@ export async function submitWord(round: Round, word: string, players: Player[]):
   const imposterId = fairPick(impCandidates, past.map((r) => r.imposter_id))!;
 
   let dodoId: string | null = null;
-  if ((room as { dodo_enabled?: boolean } | null)?.dodo_enabled) {
-    // Dodo: never the imposter; prefer not the chooser when enough players.
-    const notImp = players.filter((p) => p.id !== imposterId).map((p) => p.id);
-    const preferred = notImp.filter((id) => id !== round.word_chooser_id);
-    const pool = preferred.length > 0 ? preferred : notImp;
-    dodoId = fairPick(pool, past.map((r) => r.dodo_id ?? null));
+  if ((room as { dodo_enabled?: boolean } | null)?.dodo_enabled && players.length >= DODO_MIN_PLAYERS) {
+    // Dodo: never the imposter and never the word chooser (the chooser doesn't compete).
+    const pool = players
+      .map((p) => p.id)
+      .filter((id) => id !== imposterId && id !== round.word_chooser_id);
+    if (pool.length > 0) dodoId = fairPick(pool, past.map((r) => r.dodo_id ?? null));
   }
 
   const { error } = await supabase
