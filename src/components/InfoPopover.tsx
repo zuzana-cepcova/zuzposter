@@ -40,7 +40,7 @@ export function DodoInfo() {
       <p className="mb-2">Dodo pozná tajné slovo, ale chce, aby ho ostatní považovali za Impostera.</p>
       <p className="mb-2">Má byť dosť podozrivý, aby ho odhlasovali – ale nie tak očividne, aby zistili, že je Dodo.</p>
       <p className="mb-1 font-bold">🏆 Vyhráva, ak ho odhlasujú ako Impostera.</p>
-      <p className="text-xs text-muted-foreground">👥 Odporúčame pri 4+ hráčoch.</p>
+      <p className="text-xs text-muted-foreground">👥 Dá sa zapnúť od 4 hráčov.</p>
     </InfoPopover>
   );
 }
@@ -78,7 +78,7 @@ export function DodoToggle({
   return (
     <div>
       <div className="flex items-center gap-2">
-        <label className="flex flex-1 cursor-pointer items-center gap-3 font-bold">
+        <label className={`flex flex-1 items-center gap-3 font-bold ${disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}>
           <input
             type="checkbox"
             checked={checked}
@@ -90,8 +90,10 @@ export function DodoToggle({
         </label>
         <DodoInfo />
       </div>
-      {checked && playerCount !== undefined && playerCount < 4 && (
-        <p className="mt-2 text-xs text-muted-foreground">⚠️ Dodo je najzábavnejší pri 4 a viac hráčoch.</p>
+      {playerCount !== undefined && playerCount < 4 && (
+        <p className="mt-2 text-xs text-muted-foreground">
+          🔒 Dodo sa dá zapnúť od 4 hráčov (teraz {playerCount}).
+        </p>
       )}
     </div>
   );
