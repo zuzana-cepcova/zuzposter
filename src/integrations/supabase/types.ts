@@ -55,6 +55,7 @@ export type Database = {
           code: string
           created_at: string
           current_round_id: string | null
+          dodo_enabled: boolean
           id: string
         }
         Insert: {
@@ -62,6 +63,7 @@ export type Database = {
           code: string
           created_at?: string
           current_round_id?: string | null
+          dodo_enabled?: boolean
           id?: string
         }
         Update: {
@@ -69,6 +71,7 @@ export type Database = {
           code?: string
           created_at?: string
           current_round_id?: string | null
+          dodo_enabled?: boolean
           id?: string
         }
         Relationships: []
@@ -76,6 +79,7 @@ export type Database = {
       rounds: {
         Row: {
           created_at: string
+          dodo_id: string | null
           id: string
           imposter_id: string | null
           room_id: string
@@ -85,6 +89,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          dodo_id?: string | null
           id?: string
           imposter_id?: string | null
           room_id: string
@@ -94,6 +99,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          dodo_id?: string | null
           id?: string
           imposter_id?: string | null
           room_id?: string
@@ -102,6 +108,13 @@ export type Database = {
           word_chooser_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "rounds_dodo_id_fkey"
+            columns: ["dodo_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "rounds_imposter_id_fkey"
             columns: ["imposter_id"]
